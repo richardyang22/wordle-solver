@@ -4,15 +4,15 @@ const NUM_GUESSES = 6;
 const DICT_SIZE = 5;
 
 const dictionary = await fetchDictionary();
-const possibilities = new Set(dictionary);
-// const possibilities = new Set([...(await dictionary)].slice(0, 100));
+// const possibilities = new Set(dictionary);
+const possibilities = new Set([...dictionary].slice(0, 100));
 // const possibilities = await fetchAnswers();
 
 const worker = new Worker('worker.js', { type: 'module' });
 
-const board = document.querySelector('#board');
+const board = document.getElementById('board');
 const possibilityList = document.querySelector('#possibility-list');
-const recommendationList = document.querySelector('#recommendation-list');
+const recommendationTable = document.querySelector('#recommendation-table');
 const progressSpan = document.querySelector('#progress');
 
 for (let i = 0; i < NUM_GUESSES; i++) {
@@ -26,6 +26,11 @@ for (let i = 0; i < NUM_GUESSES; i++) {
   }
   board.appendChild(wordRow);
 }
+
+const listContainers = document.querySelectorAll('.list-container');
+listContainers.forEach((container) => {
+  container.style.height = `${board.offsetHeight}px`;
+});
 
 updatePossibilityList(possibilities);
 updateRecommendationList(possibilities);
@@ -119,13 +124,13 @@ function updatePossibilityList(possibilities) {
 }
 
 function updateRecommendationList(possibilities) {
-  recommendationList.classList.add('loading');
+  recommendationTable.classList.add('loading');
   worker.postMessage([dictionary, possibilities]);
 }
 
 function updateProgress() {
   wordsDone++;
-  progressSpan.textContent = Math.round(wordsDone / dictionary.size * 100) + '%';
+  progressSpan.textContent = Math.round((wordsDone / dictionary.size) * 100) + '%';
 }
 
 worker.onmessage = (e) => {
@@ -134,18 +139,19 @@ worker.onmessage = (e) => {
   } else {
     const recommendations = e.data.recommendations;
     const sortedRecommendations = Object.entries(recommendations).sort((rec1, rec2) => rec1[1] - rec2[1]);
-    recommendationList.innerHTML = '';
+    recommendationTable.innerHTML = '';
     for (const [word, score] of sortedRecommendations) {
-      const wordSpan = document.createElement('span');
-      wordSpan.textContent = word;
-      const scoreSpan = document.createElement('span');
-      scoreSpan.textContent = Math.round(score * 100) / 100;
-      const recommendationItem = document.createElement('li');
-      recommendationItem.appendChild(wordSpan);
-      recommendationItem.appendChild(scoreSpan);
-      recommendationList.appendChild(recommendationItem);
+      const wordCell = document.createElement('td');
+      wordCell.textContent = word;
+      const scoreCell = document.createElement('td');
+      scoreCell.classList.add('score-cell')
+      scoreCell.textContent = Math.round(score * 100) / 100;
+      const recommendationRow = document.createElement('tr');
+      recommendationRow.appendChild(wordCell);
+      recommendationRow.appendChild(scoreCell);
+      recommendationTable.appendChild(recommendationRow);
     }
-    recommendationList.classList.remove('loading');
+    recommendationTable.classList.remove('loading');
   }
 };
 
