@@ -1,0 +1,91 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  height: 100vh;
+}
+
+#board {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.word-row {
+  display: flex;
+  gap: 10px;
+}
+
+.tile {
+  height: 60px;
+  width: 60px;
+  text-align: center;
+  line-height: 60px;
+  font-size: 24pt;
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+.tile[data-state='empty'] {
+  border: 2px solid lightgrey;
+}
+
+.tile[data-state='filled'] {
+  border: 2px solid black;
+}
+
+.tile[data-state='absent'] {
+  border: none;
+  background-color: gray;
+}
+
+.tile[data-state='present'] {
+  border: none;
+  background-color: rgb(241, 209, 1);
+}
+
+.tile[data-state='correct'] {
+  border: none;
+  background-color: rgb(4, 182, 4);
+}
+
+#possibility-list {
+  height: 410px;
+  width: 200px;
+  margin: 0;
+  padding: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+  border: 2px solid black;
+  box-sizing: border-box;
+}
+
+#recommendation-list {
+  height: 410px;
+  width: 150px;
+  margin: 0;
+  padding: 5px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  list-style: none;
+  border: 2px solid black;
+  box-sizing: border-box;
+}
+
+.loading {
+  opacity: 0.5;
+  pointer-events: none;
+  background: green;
+}
+
+#recommendation-list > li {
+  display: flex;
+  justify-content: space-between;
+}
