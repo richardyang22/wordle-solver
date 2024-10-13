@@ -4,16 +4,17 @@ const NUM_GUESSES = 6;
 const DICT_SIZE = 5;
 
 const dictionary = await fetchDictionary();
-// const possibilities = new Set(dictionary);
-const possibilities = new Set([...dictionary].slice(0, 100));
+const possibilities = new Set(dictionary);
+// const possibilities = new Set([...dictionary].slice(0, 100));
 // const possibilities = await fetchAnswers();
 
-const worker = new Worker('worker.js', { type: 'module' });
+const worker = new Worker('worker.js');
 
 const board = document.getElementById('board');
 const possibilityList = document.querySelector('#possibility-list');
 const recommendationTable = document.querySelector('#recommendation-table');
-const progressSpan = document.querySelector('#progress');
+const loadingOverlay = document.querySelector('.loading-overlay');
+const progressBar = document.querySelector('#progress-bar');
 
 for (let i = 0; i < NUM_GUESSES; i++) {
   const wordRow = document.createElement('div');
@@ -40,7 +41,6 @@ let currCol = 0;
 let letterMode = true;
 let guess = '';
 let pattern = [];
-let wordsDone = 0;
 document.addEventListener('keydown', (event) => {
   if (letterMode) {
     if (/^[a-z]$/i.test(event.key) && currCol < WORD_LENGTH && currRow < NUM_GUESSES) {
@@ -75,8 +75,7 @@ document.addEventListener('keydown', (event) => {
       currCol = 0;
       guess = '';
       pattern = [];
-      wordsDone = 0;
-      progressSpan.textContent = '';
+      progressBar.textContent = '';
     } else if (event.key === 'Backspace' && currCol > 0) {
       currCol--;
       pattern.pop();
@@ -124,36 +123,36 @@ function updatePossibilityList(possibilities) {
 }
 
 function updateRecommendationList(possibilities) {
-  recommendationTable.classList.add('loading');
+  let wordsDone = 0;
+  loadingOverlay.style.display = 'flex';
+  progressBar.style.width = '0%';
+  progressBar.textContent = '0%';
   worker.postMessage([dictionary, possibilities]);
-}
-
-function updateProgress() {
-  wordsDone++;
-  progressSpan.textContent = Math.round((wordsDone / dictionary.size) * 100) + '%';
-}
-
-worker.onmessage = (e) => {
-  if (e.data.type === 'progress') {
-    updateProgress();
-  } else {
-    const recommendations = e.data.recommendations;
-    const sortedRecommendations = Object.entries(recommendations).sort((rec1, rec2) => rec1[1] - rec2[1]);
-    recommendationTable.innerHTML = '';
-    for (const [word, score] of sortedRecommendations) {
-      const wordCell = document.createElement('td');
-      wordCell.textContent = word;
-      const scoreCell = document.createElement('td');
-      scoreCell.classList.add('score-cell')
-      scoreCell.textContent = Math.round(score * 100) / 100;
-      const recommendationRow = document.createElement('tr');
-      recommendationRow.appendChild(wordCell);
-      recommendationRow.appendChild(scoreCell);
-      recommendationTable.appendChild(recommendationRow);
+  worker.onmessage = (e) => {
+    if (e.data.type === 'progress') {
+      wordsDone++;
+      const percent = (wordsDone / dictionary.size) * 100;
+      progressBar.style.width = percent + '%';
+      progressBar.textContent = Math.round(percent) + '%';
+    } else {
+      const recommendations = e.data.recommendations;
+      const sortedRecommendations = Object.entries(recommendations).sort((rec1, rec2) => rec1[1] - rec2[1]);
+      recommendationTable.innerHTML = '';
+      for (const [word, score] of sortedRecommendations) {
+        const wordCell = document.createElement('td');
+        wordCell.textContent = word;
+        const scoreCell = document.createElement('td');
+        scoreCell.classList.add('score-cell');
+        scoreCell.textContent = Math.round(score * 100) / 100;
+        const recommendationRow = document.createElement('tr');
+        recommendationRow.appendChild(wordCell);
+        recommendationRow.appendChild(scoreCell);
+        recommendationTable.appendChild(recommendationRow);
+      }
+      loadingOverlay.style.display = 'none';
     }
-    recommendationTable.classList.remove('loading');
-  }
-};
+  };
+}
 
 function handleSubmit(guess, pattern) {
   let numPattern = 0;
